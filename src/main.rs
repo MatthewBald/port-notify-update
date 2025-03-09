@@ -65,6 +65,7 @@ fn handle_file_saved(event: Event) {
 }
 
 fn read_file(path: &String) -> String {
+    log::info!("Reading contents of file {path}");
     let contents = fs::read_to_string(path)
         .expect("Should have been able to read the file");
 
@@ -77,8 +78,9 @@ fn post_port(port: String) {
     let mut map = HashMap::new();
     map.insert("listen_port", port);
 
+    let base_url = env::var("BASEURL").expect("BASEURL environment variable should be set");
     let client = reqwest::blocking::Client::new();
-    let res = client.post("http://127.0.0.1:8080/api/v2/app/setPreferences")
+    let res = client.post(format!("{base_url}/api/v2/app/setPreferences"))
         .json(&map)
         .send();
 
