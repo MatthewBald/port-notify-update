@@ -64,17 +64,17 @@ fn handle_file_saved(event: Event) {
     post_port(&read_file(&path));
 }
 
-fn read_file(path: &String) -> String {
+fn read_file(path: &String) -> u32 {
     log::info!("Reading contents of file {path}");
     let contents = fs::read_to_string(path)
         .expect("Should have been able to read the file");
 
     log::info!("Read '{contents}' from file");
 
-    contents
+    contents.parse().expect("File contents not a number")
 }
 
-fn post_port(port: &String) {
+fn post_port(port: &u32) {
     let mut map = HashMap::new();
     map.insert("listen_port", port);
 
@@ -84,6 +84,7 @@ fn post_port(port: &String) {
     let client = reqwest::blocking::Client::new();
     let res = client.post(format!("{base_url}/api/v2/app/setPreferences"))
         .body(body)
+        .header("content-type", "application/x-www-form-urlencoded")
         .send();
 
     match res {
