@@ -1,14 +1,12 @@
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
-use std::{fs, path::Path};
+use std::{env, fs, path::Path};
 
 // Starting with the example here: https://github.com/notify-rs/notify/blob/main/examples/monitor_raw.rs
 
 fn main() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
 
-    let path = std::env::args()
-        .nth(1)
-        .expect("Argument 1 needs to be a path");
+    let path = env::var("FILEPATH").expect("FILEPATH environment variable should be set");
 
     log::info!("Watching {path}");
 
