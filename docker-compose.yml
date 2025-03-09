@@ -3,5 +3,7 @@ services:
     image: pnotify
     container_name: pnotify
     environment:
-      - FILEPATH=/tmp/gluetun/forwarded_port
+      - FILEPATH=/tmp/gluetun
+      - BASEURL=http://gluetun:8080
+      - RUST_LOG=info # info or debug
     restart: unless-stopped
