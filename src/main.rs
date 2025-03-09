@@ -1,5 +1,5 @@
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
-use std::{collections::HashMap, env, fs, path::Path};
+use std::{env, fs, path::Path};
 
 fn main() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
@@ -7,8 +7,16 @@ fn main() {
     let path = env::var("FILEPATH").expect("FILEPATH environment variable should be set");
 
     log::info!("Watching {path}");
-    log::info!("Posting initial contents");
-    post_port(&read_file(&path));
+    
+    match fs::exists(format!("{path}/forwarded_port")) {
+        Ok(exists) => {
+            if exists {
+                log::info!("Posting initial contents");
+                post_port(&read_file(&format!("{path}/forwarded_port")));
+            }
+        },
+        Err(_) => log::info!("Did not find existing file. Will continue to watch the directory."),
+    }
 
     if let Err(error) = watch(path) {
         log::error!("Error: {error:?}");
@@ -24,7 +32,15 @@ fn watch<P: AsRef<Path>>(path: P) -> notify::Result<()> {
 
     for res in rx {
         match res {
-            Ok(event) => change_event_handler(event),
+            Ok(event) => {
+                let path = event.paths[0].display().to_string();
+                if path.contains("forwarded_port") {
+                    change_event_handler(event)
+                }
+                else {
+                    log::info!("Detected an unrelated file change event {event:?}")
+                }
+            },
             Err(error) => log::error!("Error! {error:?}"),
         }
     }
@@ -71,12 +87,19 @@ fn read_file(path: &String) -> u32 {
 
     log::info!("Read '{contents}' from file");
 
-    contents.parse().expect("File contents not a number")
+    match contents.parse() {
+        Ok(number) => return number,
+        Err(error) => {
+            log::error!("{error:?}");
+            return 0;
+        },
+    }
 }
 
 fn post_port(port: &u32) {
-    let mut map = HashMap::new();
-    map.insert("listen_port", port);
+    if *port <= 0 {
+        return;
+    }
 
     let body = format!("json={{\"listen_port\": {port}}}");
 
