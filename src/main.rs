@@ -1,7 +1,5 @@
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
-use std::{env, fs, path::Path};
-
-// Starting with the example here: https://github.com/notify-rs/notify/blob/main/examples/monitor_raw.rs
+use std::{collections::HashMap, env, fs, path::Path};
 
 fn main() {
     env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).init();
@@ -9,6 +7,8 @@ fn main() {
     let path = env::var("FILEPATH").expect("FILEPATH environment variable should be set");
 
     log::info!("Watching {path}");
+    log::info!("Posting initial contents");
+    post_port(read_file(&path));
 
     if let Err(error) = watch(path) {
         log::error!("Error: {error:?}");
@@ -60,14 +60,26 @@ fn log_no_change(event: Event) {
 }
 
 fn handle_file_saved(event: Event) {
-    let contents = fs::read_to_string(&event.paths[0])
+    let path = event.paths[0].display().to_string();
+    post_port(read_file(&path));
+}
+
+fn read_file(path: &String) -> String {
+    let contents = fs::read_to_string(path)
         .expect("Should have been able to read the file");
 
     log::info!("Read '{contents}' from file");
 
+    contents
+}
+
+fn post_port(port: String) {
+    let mut map = HashMap::new();
+    map.insert("listen_port", port);
+
     let client = reqwest::blocking::Client::new();
     let res = client.post("http://127.0.0.1:8080/api/v2/app/setPreferences")
-        .body("{\"listen_port\": 12345 }")
+        .json(&map)
         .send();
 
     match res {

@@ -8,4 +8,4 @@ env_logger = "0.11.6"
 futures = "0.3.31"
 log = "0.4.26"
 notify = "8.0.0"
-reqwest = { version = "0.12.12", features = ["blocking"] }
+reqwest = { version = "0.12.12", features = ["blocking", "json"] }
