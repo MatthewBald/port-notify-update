@@ -1,0 +1,7 @@
+services:
+  pnotify:
+    image: pnotify
+    container_name: pnotify
+    environment:
+      - FILEPATH=/tmp/gluetun/forwarded_port
+    restart: unless-stopped
