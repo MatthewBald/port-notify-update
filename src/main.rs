@@ -8,7 +8,7 @@ fn main() {
 
     log::info!("Watching {path}");
     log::info!("Posting initial contents");
-    post_port(read_file(&path));
+    post_port(&read_file(&path));
 
     if let Err(error) = watch(path) {
         log::error!("Error: {error:?}");
@@ -61,7 +61,7 @@ fn log_no_change(event: Event) {
 
 fn handle_file_saved(event: Event) {
     let path = event.paths[0].display().to_string();
-    post_port(read_file(&path));
+    post_port(&read_file(&path));
 }
 
 fn read_file(path: &String) -> String {
@@ -74,14 +74,16 @@ fn read_file(path: &String) -> String {
     contents
 }
 
-fn post_port(port: String) {
+fn post_port(port: &String) {
     let mut map = HashMap::new();
     map.insert("listen_port", port);
+
+    let body = format!("json={{\"listen_port\": {port}}}");
 
     let base_url = env::var("BASEURL").expect("BASEURL environment variable should be set");
     let client = reqwest::blocking::Client::new();
     let res = client.post(format!("{base_url}/api/v2/app/setPreferences"))
-        .json(&map)
+        .body(body)
         .send();
 
     match res {
